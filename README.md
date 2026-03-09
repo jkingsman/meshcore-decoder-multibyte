@@ -1,3 +1,7 @@
+# THIS IS A PATCHED FORK; YOU PROBABLY DON'T WANT TO WORK OFF THIS.
+
+This is Michael Hart's original library with a multibyte fork.
+
 # MeshCore Decoder
 
 A TypeScript library for decoding MeshCore mesh networking packets with full cryptographic support. Uses WebAssembly (WASM) for Ed25519 key derivation through the [orlp/ed25519 library](https://github.com/orlp/ed25519).
@@ -27,12 +31,12 @@ npm install -g @michaelhart/meshcore-decoder
 ## Quick Start
 
 ```typescript
-import { 
-  MeshCoreDecoder, 
+import {
+  MeshCoreDecoder,
   PayloadType,
   Utils,
   DecodedPacket,
-  AdvertPayload 
+  AdvertPayload
 } from '@michaelhart/meshcore-decoder';
 
 // Decode a MeshCore packet
@@ -133,12 +137,12 @@ For some packet types not yet supported here, they may not exist in MeshCore yet
 Simply provide your channel secret keys and the library handles everything else:
 
 ```typescript
-import { 
-  MeshCoreDecoder, 
+import {
+  MeshCoreDecoder,
   PayloadType,
   CryptoKeyStore,
   DecodedPacket,
-  GroupTextPayload 
+  GroupTextPayload
 } from '@michaelhart/meshcore-decoder';
 
 // Create a key store with channel secret keys
@@ -156,7 +160,7 @@ const encryptedPacket: DecodedPacket = MeshCoreDecoder.decode(groupTextHexData, 
 
 if (encryptedPacket.payloadType === PayloadType.GroupText && encryptedPacket.payload.decoded) {
   const groupText: GroupTextPayload = encryptedPacket.payload.decoded as GroupTextPayload;
-  
+
   if (groupText.decrypted) {
     console.log(`Sender: ${groupText.decrypted.sender}`);
     console.log(`Message: ${groupText.decrypted.message}`);
@@ -335,15 +339,15 @@ export class MeshCoreWasmService {
     try {
       const jsResponse = await fetch('/assets/orlp-ed25519.js');
       const jsText = await jsResponse.text();
-      
+
       const script = document.createElement('script');
       script.textContent = jsText;
       document.head.appendChild(script);
-      
+
       this.wasm = await (window as any).OrlpEd25519({
         locateFile: (path: string) => path === 'orlp-ed25519.wasm' ? '/assets/orlp-ed25519.wasm' : path
       });
-      
+
       this.ready.next(true);
     } catch (error) {
       console.error('WASM load failed:', error);
@@ -353,20 +357,20 @@ export class MeshCoreWasmService {
 
   derivePublicKey(privateKeyHex: string): string | null {
     if (!this.wasm) return null;
-    
+
     const privateKeyBytes = this.hexToBytes(privateKeyHex);
     const privateKeyPtr = 1024;
     const publicKeyPtr = 1088;
-    
+
     this.wasm.HEAPU8.set(privateKeyBytes, privateKeyPtr);
-    
+
     const result = this.wasm.ccall('orlp_derive_public_key', 'number', ['number', 'number'], [publicKeyPtr, privateKeyPtr]);
-    
+
     if (result === 0) {
       const publicKeyBytes = this.wasm.HEAPU8.subarray(publicKeyPtr, publicKeyPtr + 32);
       return this.bytesToHex(publicKeyBytes);
     }
-    
+
     return null;
   }
 
